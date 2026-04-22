@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>宮廟抽籤系統 - 香油錢捐贈</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1>線上宮廟抽籤系統</h1>
+    <nav>
+      <a href="/">首頁</a>
+      <a href="/donation.html" style="color: var(--secondary-color);">香油錢捐贈</a>
+      <a href="/history.html">歷史紀錄</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card" id="donation-form-container">
+      <h2 style="color: var(--primary-color);">香油錢捐贈</h2>
+      <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">※ 此為意願記錄，非實際金流扣款</p>
+      
+      <form id="donation-form">
+        <div class="form-group">
+          <label>捐款金額 (NT$)</label>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <button type="button" class="btn" style="flex:1" onclick="setAmount(100)">$100</button>
+            <button type="button" class="btn" style="flex:1" onclick="setAmount(300)">$300</button>
+            <button type="button" class="btn" style="flex:1" onclick="setAmount(500)">$500</button>
+            <button type="button" class="btn" style="flex:1" onclick="setAmount(1000)">$1000</button>
+          </div>
+          <input type="number" id="amount" min="1" placeholder="或輸入自訂金額" required>
+        </div>
+
+        <div class="form-group">
+          <label for="name">姓名（選填）</label>
+          <input type="text" id="name" placeholder="大名">
+        </div>
+
+        <div class="form-group">
+          <label for="phone">聯絡電話（選填）</label>
+          <input type="tel" id="phone" placeholder="09xxxxxxxx">
+        </div>
+
+        <div class="form-group">
+          <label for="note">備註祈願（選填）</label>
+          <textarea id="note" rows="3" placeholder="寫下您的祈願..."></textarea>
+        </div>
+
+        <button type="submit" class="btn" style="width: 100%;" id="submit-btn">誠心捐贈</button>
+        <p id="error-message" class="error-msg"></p>
+      </form>
+    </div>
+
+    <div class="card" id="success-container" style="display: none; text-align: center;">
+      <h2 style="color: var(--primary-color);">功德無量</h2>
+      <p id="success-message" style="font-size: 1.2rem; margin: 1.5rem 0;"></p>
+      <div style="background-color: #f9f9f9; padding: 1rem; border-radius: var(--border-radius); display: inline-block;">
+        <p style="margin: 0; color: #666;">您的捐款流水號</p>
+        <h3 id="ref-no" style="margin: 0.5rem 0 0 0; color: var(--primary-color);"></h3>
+      </div>
+      <div style="margin-top: 2rem;">
+        <a href="/history.html" class="btn">查看歷史紀錄</a>
+        <a href="/" class="btn" style="background-color: #666;">回首頁</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script>
+    function setAmount(val) {
+      document.getElementById('amount').value = val;
+    }
+
+    document.getElementById('donation-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const btn = document.getElementById('submit-btn');
+      const errorMsg = document.getElementById('error-message');
+      
+      const amount = parseInt(document.getElementById('amount').value);
+      const name = document.getElementById('name').value;
+      const phone = document.getElementById('phone').value;
+      const note = document.getElementById('note').value;
+
+      if (!amount || amount <= 0) {
+        errorMsg.textContent = "請輸入有效的捐款金額";
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      try {
+        btn.disabled = true;
+        btn.textContent = "處理中...";
+        errorMsg.style.display = 'none';
+
+        const result = await API.createDonation({
+          amount,
+          name: name || undefined,
+          phone: phone || undefined,
+          note: note || undefined
+        });
+
+        document.getElementById('donation-form-container').style.display = 'none';
+        document.getElementById('success-container').style.display = 'block';
+        document.getElementById('success-message').textContent = result.message;
+        document.getElementById('ref-no').textContent = result.reference_no;
+
+      } catch (error) {
+        errorMsg.textContent = error.message;
+        errorMsg.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = "誠心捐贈";
+      }
+    });
+  </script>
+</body>
+</html>

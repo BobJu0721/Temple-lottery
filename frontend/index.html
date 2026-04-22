@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>宮廟抽籤系統 - 選擇神明</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1>線上宮廟抽籤系統</h1>
+    <nav>
+      <a href="/">首頁</a>
+      <a href="/donation.html">香油錢捐贈</a>
+      <a href="/history.html">歷史紀錄</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2 style="text-align: center; color: var(--primary-color);">請選擇您要請示的神明</h2>
+      <div id="gods-container" class="god-grid">
+        <!-- Gods will be loaded here via JS -->
+        <p style="text-align: center; width: 100%;">載入中...</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const container = document.getElementById('gods-container');
+      try {
+        const gods = await API.getGods();
+        container.innerHTML = '';
+        gods.forEach(god => {
+          const card = document.createElement('div');
+          card.className = 'god-card';
+          card.innerHTML = `
+            <h2>${god.name}</h2>
+            <p>${god.description || ''}</p>
+          `;
+          card.onclick = () => {
+            window.location.href = `/fortune.html?god_id=${god.id}&god_name=${encodeURIComponent(god.name)}`;
+          };
+          container.appendChild(card);
+        });
+      } catch (error) {
+        container.innerHTML = `<p class="error-msg" style="display:block;">載入神明資料失敗：${error.message}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>

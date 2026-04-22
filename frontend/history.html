@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>宮廟抽籤系統 - 歷史紀錄</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1>線上宮廟抽籤系統</h1>
+    <nav>
+      <a href="/">首頁</a>
+      <a href="/donation.html">香油錢捐贈</a>
+      <a href="/history.html" style="color: var(--secondary-color);">歷史紀錄</a>
+    </nav>
+  </header>
+
+  <main>
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+      <button class="btn" id="tab-fortune" style="flex:1">抽籤紀錄</button>
+      <button class="btn" id="tab-donation" style="flex:1; background-color: #666;">捐款紀錄</button>
+    </div>
+
+    <div class="card" id="content-container">
+      <p style="text-align: center;">載入中...</p>
+    </div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script>
+    let godsMap = {};
+
+    function formatDate(isoString) {
+      const d = new Date(isoString);
+      return d.toLocaleString('zh-TW');
+    }
+
+    async function loadFortuneHistory() {
+      const container = document.getElementById('content-container');
+      container.innerHTML = '<p style="text-align: center;">載入中...</p>';
+      
+      try {
+        if (Object.keys(godsMap).length === 0) {
+          const gods = await API.getGods();
+          gods.forEach(g => godsMap[g.id] = g.name);
+        }
+
+        const records = await API.getFortuneHistory();
+        if (records.length === 0) {
+          container.innerHTML = '<p style="text-align: center; color: #666;">尚無抽籤紀錄</p>';
+          return;
+        }
+
+        container.innerHTML = '';
+        records.forEach(r => {
+          const div = document.createElement('div');
+          div.className = 'history-item';
+          div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <h3 style="margin: 0; color: var(--primary-color);">${godsMap[r.god_id] || '神明'} - 第 ${r.fortune_no} 籤</h3>
+              <span class="fortune-level" style="font-size: 0.9rem; padding: 0.2rem 0.5rem;">${r.level}</span>
+            </div>
+            <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">${formatDate(r.drawn_at)}</p>
+            ${r.wish_text ? `<p style="margin: 0 0 0.5rem 0; font-size: 0.9rem;"><strong>祈願：</strong>${r.wish_text}</p>` : ''}
+            <div style="background-color: #f9f9f9; padding: 1rem; border-radius: 4px; margin-top: 0.5rem;">
+              <p style="margin:0; font-family: 'DFKai-SB', 'Kaiti', serif;">${r.poem ? r.poem.replace(/，/g, '，<br>').replace(/。/g, '。<br>') : ''}</p>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      } catch (error) {
+        container.innerHTML = `<p class="error-msg" style="display:block;">載入失敗：${error.message}</p>`;
+      }
+    }
+
+    async function loadDonationHistory() {
+      const container = document.getElementById('content-container');
+      container.innerHTML = '<p style="text-align: center;">載入中...</p>';
+      
+      try {
+        const records = await API.getDonationHistory();
+        if (records.length === 0) {
+          container.innerHTML = '<p style="text-align: center; color: #666;">尚無捐款紀錄</p>';
+          return;
+        }
+
+        container.innerHTML = '';
+        records.forEach(r => {
+          const div = document.createElement('div');
+          div.className = 'history-item';
+          div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <h3 style="margin: 0; color: var(--primary-color);">NT$ ${r.amount}</h3>
+              <span style="font-size: 0.9rem; color: #666; background: #eee; padding: 0.2rem 0.5rem; border-radius: 4px;">${r.status === 'recorded' ? '已記錄' : '已取消'}</span>
+            </div>
+            <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">時間：${formatDate(r.donated_at)}</p>
+            <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem;"><strong>流水號：</strong>${r.reference_no}</p>
+            ${r.name ? `<p style="margin: 0 0 0.5rem 0; font-size: 0.9rem;"><strong>大名：</strong>${r.name}</p>` : ''}
+            ${r.note ? `<p style="margin: 0 0 0.5rem 0; font-size: 0.9rem;"><strong>備註：</strong>${r.note}</p>` : ''}
+          `;
+          container.appendChild(div);
+        });
+      } catch (error) {
+        container.innerHTML = `<p class="error-msg" style="display:block;">載入失敗：${error.message}</p>`;
+      }
+    }
+
+    document.getElementById('tab-fortune').addEventListener('click', (e) => {
+      e.target.style.backgroundColor = 'var(--primary-color)';
+      document.getElementById('tab-donation').style.backgroundColor = '#666';
+      loadFortuneHistory();
+    });
+
+    document.getElementById('tab-donation').addEventListener('click', (e) => {
+      e.target.style.backgroundColor = 'var(--primary-color)';
+      document.getElementById('tab-fortune').style.backgroundColor = '#666';
+      loadDonationHistory();
+    });
+
+    // Default load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadFortuneHistory();
+    });
+  </script>
+</body>
+</html>

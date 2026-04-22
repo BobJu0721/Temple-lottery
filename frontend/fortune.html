@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>宮廟抽籤系統 - 求籤</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1>線上宮廟抽籤系統</h1>
+    <nav>
+      <a href="/">首頁</a>
+      <a href="/donation.html">香油錢捐贈</a>
+      <a href="/history.html">歷史紀錄</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card" id="fortune-setup">
+      <h2 style="color: var(--primary-color);">向 <span id="god-name-display"></span> 求籤</h2>
+      <div class="form-group">
+        <label for="wish-text">誠心祈願（選填）</label>
+        <textarea id="wish-text" rows="4" placeholder="請在心中默念您的姓名、出生年月日、地址，並具體說明欲請示的事項..."></textarea>
+      </div>
+      <button id="draw-btn" class="btn" style="width: 100%;">誠心搖籤</button>
+      <p id="error-message" class="error-msg"></p>
+    </div>
+
+    <div id="fortune-animation">
+      <h3 style="color: var(--primary-color);">誠心搖籤中...</h3>
+      <div class="stick-container shaking">
+        <div class="stick"></div>
+      </div>
+    </div>
+
+    <div class="card" id="fortune-result">
+      <h2>第 <span id="res-fortune-no"></span> 籤</h2>
+      <div class="fortune-level" id="res-level"></div>
+      <div class="fortune-poem" id="res-poem"></div>
+      
+      <div class="interpretation">
+        <h3>白話解釋</h3>
+        <p><strong>事業：</strong> <span id="res-career"></span></p>
+        <p><strong>感情：</strong> <span id="res-love"></span></p>
+        <p><strong>健康：</strong> <span id="res-health"></span></p>
+        <p><strong>學業：</strong> <span id="res-study"></span></p>
+      </div>
+      
+      <div style="margin-top: 2rem; text-align: center;">
+        <a href="/donation.html" class="btn">捐贈香油錢答謝</a>
+        <a href="/" class="btn" style="background-color: #666;">回首頁</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const godId = urlParams.get('god_id');
+      const godName = urlParams.get('god_name');
+
+      if (!godId) {
+        alert('請先選擇神明');
+        window.location.href = '/';
+        return;
+      }
+
+      document.getElementById('god-name-display').textContent = godName || '神明';
+
+      const drawBtn = document.getElementById('draw-btn');
+      drawBtn.addEventListener('click', async () => {
+        const wishText = document.getElementById('wish-text').value;
+        const errorMsg = document.getElementById('error-message');
+        
+        // Hide setup, show animation
+        document.getElementById('fortune-setup').style.display = 'none';
+        document.getElementById('fortune-animation').style.display = 'block';
+        errorMsg.style.display = 'none';
+
+        try {
+          // Simulate shaking time + api call
+          const [result] = await Promise.all([
+            API.drawFortune(parseInt(godId), wishText),
+            new Promise(resolve => setTimeout(resolve, 2000)) // at least 2 seconds animation
+          ]);
+
+          // Hide animation, show result
+          document.getElementById('fortune-animation').style.display = 'none';
+          document.getElementById('fortune-result').style.display = 'block';
+
+          // Populate result
+          document.getElementById('res-fortune-no').textContent = result.fortune_no;
+          document.getElementById('res-level').textContent = result.level;
+          document.getElementById('res-poem').innerText = result.poem.replace(/，/g, '，\n').replace(/。/g, '。\n');
+          document.getElementById('res-career').textContent = result.interpretation.career;
+          document.getElementById('res-love').textContent = result.interpretation.love;
+          document.getElementById('res-health').textContent = result.interpretation.health;
+          document.getElementById('res-study').textContent = result.interpretation.study;
+
+        } catch (error) {
+          // Revert on error
+          document.getElementById('fortune-animation').style.display = 'none';
+          document.getElementById('fortune-setup').style.display = 'block';
+          errorMsg.textContent = error.message;
+          errorMsg.style.display = 'block';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
